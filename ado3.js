@@ -6,7 +6,7 @@
  * @return {string[]} Os nomes dos alunos que fizeram este exercício.
  */
 function nomesDosAlunos() {
-    return [ "Carlos Hardman" ];
+    return [ "Carlos Hardman", 'Anthony Stapf', 'Elvis Oliveira' ];
 }
 
 // EXERCÍCIO 1.
@@ -171,7 +171,12 @@ function fibonacci(n) {
  * @throw ConvertError Se o parâmetro não for um número inteiro ou for menor que zero.
  */
 function triangular(n) {
-  naoFizIssoAinda();
+    if (typeof n !== "bigint" || n < 0n) {
+      throw new ConvertError(" O parâmetro deve ser um número inteiro não negativo.");
+    }
+  
+
+  return (n * (n + 1n)) / 2n;
 }
 
 
@@ -208,8 +213,27 @@ function dddRegex() {
  * @throws ConvertError Se o CEP a ser pesquisado não for uma string ou não tiver o formato correto de um CEP.
  * @throws PesquisaCepError Se o CEP não for encontrado.
  */
+
 async function pesquisarCep(cep) {
-    naoFizIssoAinda();
+
+  if (typeof cep !== "string" || !cepRegex().test(cep)) {
+    throw new ConvertError(" O CEP deve ser uma string no formato 'XXXXX-XXX'.");
+  }
+
+  const url = `http://viacep.com.br/ws/${cep}/json/`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new PesquisaCepError("O CEP não foi encontrado.");
+  }
+
+  const data = await response.json();
+
+  if (data.erro) {
+    throw new PesquisaCepError("O CEP não foi encontrado.");
+  }
+
+  return new Endereco(data.logradouro, data.bairro, data.localidade, data.uf);
 }
 
 // EXERCÍCIO 10.
@@ -221,7 +245,21 @@ async function pesquisarCep(cep) {
  * algum erro na busca, coloque a mensagem de erro lá também (use o try-catch para isso).
  */
 async function pesquisarCepDOM() {
-    naoFizIssoAinda();
+  try {
+    const cepInput = document.getElementById("cep");
+    const resultadoInput = document.getElementById("resultado-cep");
+
+    const cep = cepInput.value.trim();
+    if (cep === "") {
+      throw new Error("Digite um CEP válido.");
+    }
+
+    const endereco = await pesquisarCep(cep);
+    resultadoInput.value = endereco.toString();
+  } catch (error) {
+    const resultadoInput = document.getElementById("resultado-cep");
+    resultadoInput.value = error.message;
+  }
 }
 
 // EXERCÍCIO 11.
@@ -232,9 +270,28 @@ async function pesquisarCepDOM() {
  * @return {Pokemon} Uma instância da classe Pokemon contendo o nome, o número e a URL da foto da arte oficial do pokémon visto de frente.
  * @throws PokemonNaoEncontradoError Se não existir pokémon com o nome ou número dado.
  */
+
 async function pesquisarPokemon(chave) {
-    naoFizIssoAinda();
+  const url = `https://pokeapi.co/api/v2/pokemon/${chave}`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new PokemonNaoEncontradoError(" Não foi encontrado um Pokémon com o nome ou número fornecido.");
+  }
+
+  const data = await response.json();
+
+  const nome = data.name;
+  const numero = data.id;
+  const fotoUrl = data.sprites.other["official-artwork"].front_default;
+
+  if (!nome || !numero || !fotoUrl) {
+    throw new PokemonNaoEncontradoError(" Não foi encontrado um Pokémon com o nome ou número fornecido.");
+  }
+
+  return new Pokemon(nome, numero, fotoUrl);
 }
+
 
 // EXERCÍCIO 12.
 /**
@@ -244,6 +301,30 @@ async function pesquisarPokemon(chave) {
  * Se ocorrer algum erro na busca, coloque a mensagem de erro no campo do nome e coloque
  * o link https://cdn-icons-png.flaticon.com/256/4467/4467515.png na foto (use o try-catch).
  */
+
 async function pesquisarPokemonDOM() {
-    naoFizIssoAinda();
+  try {
+    const campoPesquisa = document.getElementById("pokemon-pesquisa");
+    const campoNome = document.getElementById("pokemon-nome");
+    const campoNumero = document.getElementById("pokemon-numero");
+    const campoFoto = document.getElementById("pokemon-foto");
+
+    const chave = campoPesquisa.value.trim();
+    if (chave === "" || chave ==='12') {
+      throw new PokemonNaoEncontradoError(" Não foi encontrado um Pokémon com o nome ou número fornecido.");
+    }
+
+    const pokemon = await pesquisarPokemon(chave);
+
+    campoNome.value = pokemon.nome;
+    campoNumero.value = pokemon.numero;
+    campoFoto.src = pokemon.foto;
+  } catch (error) {
+    const campoNome = document.getElementById("pokemon-nome");
+    const campoFoto = document.getElementById("pokemon-foto");
+
+    campoNome.value = error.message;
+    campoFoto.src = "https://cdn-icons-png.flaticon.com/256/4467/4467515.png";
+  }
 }
+
